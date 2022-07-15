@@ -77,7 +77,7 @@ class BasicBlock(nn.Module):
 
         # Gate layers
         self.fc1 = nn.Conv2d(in_planes, 16, kernel_size=1)
-        self.fc1bn = nn.BatchNorm1d(16)
+        self.fc1bn = nn.BatchNorm2d(16)
         self.fc2 = nn.Conv2d(16, 2, kernel_size=1)
         # initialize the bias of the last fc for 
         # initial opening rate of the gate of about 85%
@@ -286,11 +286,11 @@ class ActivationAccum():
             
     def getoutput(self):
         if self.epoch % 25 == 0:
-            return([{k: self.gates[k].data.cpu().numpy()[0] / 10000 for k in self.gates},
-                {k: self.classes[k].data.cpu().numpy()[0] / 1000 / np.sum(self.numblocks) for k in self.classes},
+            return([{k: self.gates[k].data.cpu().numpy() / 10000 for k in self.gates},
+                {k: self.classes[k].data.cpu().numpy() / 1000 / np.sum(self.numblocks) for k in self.classes},
                 self.heatmap.cpu().numpy() / 1000])
         else:
-            return([{k: self.gates[k].data.cpu().numpy()[0] / 10000 for k in self.gates}])
+            return([{k: self.gates[k].data.cpu().numpy() / 10000 for k in self.gates}])
 
 
 class ActivationAccum_img():
@@ -333,3 +333,4 @@ class ActivationAccum_img():
                    self.heatmap.cpu().numpy() / 50])
         else:
             return([{k: self.gates[k] / 50000 for k in self.gates}])
+

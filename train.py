@@ -247,46 +247,48 @@ def validate(val_loader, model, criterion, epoch):
     model.eval()
 
     end = time.time()
-    for i, (input, target) in enumerate(val_loader):
-        target = target.cuda(non_blocking=True)
-        input = input.cuda()
-        input_var = torch.autograd.Variable(input, volatile=True)
-        target_var = torch.autograd.Variable(target, volatile=True)
+    with torch.no_grad():
+      for i, (input, target) in enumerate(val_loader):
+          target = target.cuda(non_blocking=True)
+          input = input.cuda()
+          with torch.no_grad():
+            input_var = input
+            target_var = target
 
-        # compute output
-        output, activation_rates = model(input_var, temperature=temp)
+          # compute output
+          output, activation_rates = model(input_var, temperature=temp)
 
-        # classification loss
-        loss = criterion(output, target_var)
+          # classification loss
+          loss = criterion(output, target_var)
 
-        # target rate loss
-        acts = 0
-        for act in activation_rates:
-            acts += torch.mean(act) 
-        # this is important when using data DataParallel
-        acts = torch.mean(acts / len(activation_rates))
+          # target rate loss
+          acts = 0
+          for act in activation_rates:
+              acts += torch.mean(act) 
+          # this is important when using data DataParallel
+          acts = torch.mean(acts / len(activation_rates))
 
-        # accumulate statistics over eval set
-        accumulator.accumulate(activation_rates, target_var)
+          # accumulate statistics over eval set
+          accumulator.accumulate(activation_rates, target_var)
 
-        # measure accuracy and record loss
-        prec1 = accuracy(output.data, target, topk=(1,))
-        losses.update(loss.data, input.size(0))
-        top1.update(prec1, input.size(0))
-        activations.update(acts.data, 1)
+          # measure accuracy and record loss
+          prec1 = accuracy(output.data, target, topk=(1,))[0]
+          losses.update(loss.data, input.size(0))
+          top1.update(prec1, input.size(0))
+          activations.update(acts.data, 1)
 
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
+          # measure elapsed time
+          batch_time.update(time.time() - end)
+          end = time.time()
 
-        if i % args.print_freq == 0:
-            print('Test: [{0}/{1}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                  'Activations: {act.val:.3f} ({act.avg:.3f})'.format(
-                      i, len(val_loader), batch_time=batch_time, loss=losses,
-                      top1=top1, act=activations))
+          if i % args.print_freq == 0:
+              print('Test: [{0}/{1}]\t'
+                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                    'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                    'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                    'Activations: {act.val:.3f} ({act.avg:.3f})'.format(
+                        i, len(val_loader), batch_time=batch_time, loss=losses,
+                        top1=top1, act=activations))
     activ_output = accumulator.getoutput()
 
     print('gate activation rates:')
@@ -402,3 +404,4 @@ def accuracy(output, target, topk=(1,)):
 
 if __name__ == '__main__':
     main()    
+
