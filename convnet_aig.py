@@ -280,7 +280,7 @@ class ActivationAccum():
             if self.epoch % 25 == 0:
                 for k in range(10):
                     self.classes[k] += torch.sum(act[targets==k])
-                    self.heatmap[k, j] += torch.sum(act[targets==k]).data[0]
+                    self.heatmap[k, j] += torch.sum(act[targets==k]).data
 
             self.numbatches += 1
             
@@ -315,17 +315,17 @@ class ActivationAccum_img():
             if self.epoch in [30, 60, 99, 149]:
                 for k in range(1000):
                     if target_rates[j] < 1:
-                        self.classes[k] += torch.sum(act[targets==k]).data[0]
-                        self.heatmap[k, j] += torch.sum(act[targets==k]).data[0]
+                        self.classes[k] += torch.sum(act[targets==k]).data
+                        self.heatmap[k, j] += torch.sum(act[targets==k]).data
                     else:
-                        self.classes[k] += torch.sum(targets==k).data[0]
-                        self.heatmap[k, j] += torch.sum(targets==k).data[0]
+                        self.classes[k] += torch.sum(targets==k).data
+                        self.heatmap[k, j] += torch.sum(targets==k).data
 
             self.numbatches += 1
     def getoutput(self):
         for k in list(self.gates.keys()):
             if type(self.gates[k]) != int:
-                self.gates[k] = self.gates[k].data.cpu().numpy()[0]
+                self.gates[k] = self.gates[k].data.cpu().numpy()
         
         if self.epoch in [30, 60, 99, 149]:
             return([{k: self.gates[k] / 50000 for k in self.gates},
